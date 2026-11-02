@@ -14,10 +14,10 @@ android {
         jvmTarget = "17"
     }
     defaultConfig {
-        applicationId = "ru.dvormechty"
+        applicationId = "ru.gorodpuls.game"
         minSdk = 23
         targetSdk = 36
-        versionCode = 29
-        versionName = "1.17.1"
+        versionCode = 1
+        versionName = "0.1.0"
     }
 }

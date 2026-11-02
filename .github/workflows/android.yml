@@ -1,8 +1,8 @@
-name: Android APK
+name: Gorod Puls 3D APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, city-pulse-3d]
   workflow_dispatch:
 
 permissions:
@@ -30,9 +30,9 @@ jobs:
           import re
           import xml.etree.ElementTree as ET
           game = Path('app/src/main/assets/index.html').read_text('utf-8')
-          assert 'window.DvorMechtyDebug' in game, 'Game engine is missing'
+          assert 'window.GorodPulsDebug' in game, 'Game engine is missing'
           assert 'window.handleAndroidBack' in game, 'Android Back is missing'
-          assert 'dvor_mechty_v18' in game, 'Save key changed'
+          assert 'getContext(\'webgl\'' in game, 'WebGL engine is missing'
           scripts = re.findall(r'<script[^>]*>(.*?)</script>', game, flags=re.S | re.I)
           assert scripts, 'Game JavaScript not found'
           Path('game-check.js').write_text('\n'.join(scripts), encoding='utf-8')
@@ -62,7 +62,7 @@ jobs:
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: DvorMechty-debug-APK
+          name: GorodPuls-3D-debug-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
