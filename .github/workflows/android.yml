@@ -1,0 +1,64 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout game
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Check HTML and game JavaScript
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+          game = Path('app/src/main/assets/index.html').read_text('utf-8')
+          assert 'window.DvorMechtyDebug' in game, 'Game engine is missing'
+          assert 'window.handleAndroidBack' in game, 'Android Back is missing'
+          assert 'dvor_mechty_v18' in game, 'Save key changed'
+          scripts = re.findall(r'<script[^>]*>(.*?)</script>', game, flags=re.S | re.I)
+          assert scripts, 'Game JavaScript not found'
+          Path('game-check.js').write_text('\n'.join(scripts), encoding='utf-8')
+          ET.parse('app/src/main/AndroidManifest.xml')
+          print('Project and save key OK')
+          PY
+          node --check game-check.js
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 36 tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build Android debug APK
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: DvorMechty-debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
